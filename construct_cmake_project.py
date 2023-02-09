@@ -21,7 +21,7 @@ class DefaultValue:
 	BUILD: str = './build'
 
 COMPILATION_DATABASE: str = 'compile_commands.json'
-SCRIPT_VERSION: str = '1.1.0'
+SCRIPT_VERSION: str = '1.1.3'
 
 
 def main() -> int:
@@ -52,7 +52,7 @@ def main() -> int:
 			return 1
 	
 	print('\nBuild files location:')
-	print(f'>>> {Fore.GREEN}{os.getcwd()}')
+	print(f'>>> {Fore.GREEN}{os.getcwd()}{Fore.RESET}')
 	return 0
 
 
