@@ -20,6 +20,8 @@ class DefaultValue:
 	THREADS: int = 4
 	BUILD: str = './build'
 
+COMPILATION_DATABASE: str = 'compile_commands.json'
+
 
 def main() -> int:
 	# Getting cli arguments/options and parsing them
@@ -60,16 +62,17 @@ def create_option_parser() -> ap.ArgumentParser:
 	"""
 	SCRIPT_NAME: str = sys.argv[0]
 	
-	PROGRAM_DESCRIPTION: str = '''
-		Python script to simplify CMake usage for C++ project construction.
-		The script stores the CMake files into a build directory and exports
-		compile commands for the clangd LSP.
+	PROGRAM_DESCRIPTION: str = f'''
+		Python script to simplify {Fore.YELLOW}CMake{Fore.RESET} usage for C/C++
+		project construction. The script stores the {Fore.YELLOW}CMake{Fore.RESET}
+		files into a build directory and exports compilation commands for the clangd LSP.
 	'''
 	
 	PROGRAM_EPILOG: str = f'''
-		Example usage: `python3 {SCRIPT_NAME} -c`.
-		The command will run CMake, compile the codebase and generate a database
-		('compile_commands.json' file) for the clangd LSP.
+		Example use: {Fore.YELLOW}python3 {SCRIPT_NAME} -c{Fore.RESET}.
+		The command will run {Fore.YELLOW}CMake{Fore.RESET}, compile the codebase
+		and generate a database ({Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} file)
+		for the clangd LSP.
 		The created build files are made relative to where you run the script from.
 	'''
 	
@@ -78,7 +81,7 @@ def create_option_parser() -> ap.ArgumentParser:
 		description=PROGRAM_DESCRIPTION,
 		epilog=PROGRAM_EPILOG,
 		add_help=True,
-		formatter_class=lambda prog: ap.HelpFormatter(prog, 8, 16)
+		formatter_class=lambda prog: ap.HelpFormatter(prog, 8, 16, 111)
 	)
 	
 	#parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
@@ -87,13 +90,19 @@ def create_option_parser() -> ap.ArgumentParser:
 		type=str,
 		default=DefaultValue.BUILD,
 		required=False,
-		help=f'Choose a different build directory. Default: \'{DefaultValue.BUILD}\'',
+		help=f'''
+			Choose a different build directory.
+			Default: {Fore.GREEN}\'{DefaultValue.BUILD}\'{Fore.RESET}
+		''',
 	)
 	
 	parser.add_argument('-c', '--compile',
 		required=False,
 		action='store_true',
-		help='Compile the project by calling CMake --build --parallel 4'
+		help=f'''
+			Compile the project by calling
+			{Fore.YELLOW}cmake --build --parallel 4{Fore.RESET}
+		'''
 	)
 	
 	parser.add_argument('-t', '--threads',
@@ -110,7 +119,10 @@ def create_option_parser() -> ap.ArgumentParser:
 		action='store_false',
 		default=False,
 		required=False,
-		help='Disable use of `compdb` to upgrade the clangd database. Default: False'
+		help=f'''
+			{Fore.YELLOW}compdb{Fore.RESET} will not be used, and no
+			{Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} will be generated.
+		'''
 	)
 	
 	return parser
@@ -154,14 +166,14 @@ def try_construct_cmake_files(buildDirectory: str) -> None:
 	).check_returncode()
 
 def compile_database() -> None:
-	"""Use `compdb` to upgrade the `compile_commands.json` file created by CMake.
+	"""Use compdb to upgrade the `COMPILATION_DATABASE` file created by CMake.
 	"""
 	with tempfile.TemporaryDirectory() as tmp_dir:
-		sp.run(f'mv ./compile_commands.json {tmp_dir}/compile_commands.json',
+		sp.run(f'mv ./{COMPILATION_DATABASE} {tmp_dir}/{COMPILATION_DATABASE}',
 			shell=True
 		).check_returncode()
 		
-		sp.run(f'compdb -p {tmp_dir} list > "compile_commands.json"',
+		sp.run(f'compdb -p {tmp_dir} list > "{COMPILATION_DATABASE}"',
 			shell=True
 		).check_returncode()
 		
