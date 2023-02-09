@@ -21,6 +21,7 @@ class DefaultValue:
 	BUILD: str = './build'
 
 COMPILATION_DATABASE: str = 'compile_commands.json'
+SCRIPT_VERSION: str = '1.1.0'
 
 
 def main() -> int:
@@ -62,67 +63,70 @@ def create_option_parser() -> ap.ArgumentParser:
 	"""
 	SCRIPT_NAME: str = sys.argv[0]
 	
-	PROGRAM_DESCRIPTION: str = f'''
-		Python script to simplify {Fore.YELLOW}CMake{Fore.RESET} usage for C/C++
-		project construction. The script stores the {Fore.YELLOW}CMake{Fore.RESET}
-		files into a build directory and exports compilation commands for the clangd LSP.
-	'''
+	PROGRAM_DESCRIPTION: str = (
+f'''Python script to simplify {Fore.YELLOW}CMake{Fore.RESET} usage for C/C++ project construction.
+The script stores the {Fore.YELLOW}CMake{Fore.RESET} files into a build directory and exports \
+compilation commands for the clangd LSP.'''
+	)
 	
-	PROGRAM_EPILOG: str = f'''
-		Example use: {Fore.YELLOW}python3 {SCRIPT_NAME} -c{Fore.RESET}.
-		The command will run {Fore.YELLOW}CMake{Fore.RESET}, compile the codebase
-		and generate a database ({Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} file)
-		for the clangd LSP.
-		The created build files are made relative to where you run the script from.
-	'''
+	PROGRAM_EPILOG: str = (
+f'''Usage example:
+        {Fore.YELLOW}python3 %(prog)s -c{Fore.RESET}
+
+To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the script executable.
+        Add execution permission:
+                {Fore.YELLOW}chmod +x {Fore.GREEN}{SCRIPT_NAME}{Fore.RESET}
+        Remove execution permission:
+                {Fore.YELLOW}chmod -x {Fore.GREEN}{SCRIPT_NAME}{Fore.RESET}'''
+        )
 	
 	parser: ap.ArgumentParser = ap.ArgumentParser(
 		prog=SCRIPT_NAME,
 		description=PROGRAM_DESCRIPTION,
 		epilog=PROGRAM_EPILOG,
 		add_help=True,
-		formatter_class=lambda prog: ap.HelpFormatter(prog, 8, 16, 111)
+		formatter_class=lambda prog: ap.RawTextHelpFormatter(prog, 8, 16, 100)
 	)
 	
-	#parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
+	parser.add_argument('-v', '--version', action='version', version=f'%(prog)s {SCRIPT_VERSION}')
 	
 	parser.add_argument('-b', '--build',
 		type=str,
 		default=DefaultValue.BUILD,
 		required=False,
-		help=f'''
-			Choose a different build directory.
-			Default: {Fore.GREEN}\'{DefaultValue.BUILD}\'{Fore.RESET}
-		''',
+		help=(
+			f'Choose a different build directory. '
+			f'Default: {Fore.GREEN}\'{DefaultValue.BUILD}\'{Fore.RESET}'
+		)
 	)
 	
 	parser.add_argument('-c', '--compile',
 		required=False,
 		action='store_true',
-		help=f'''
-			Compile the project by calling
-			{Fore.YELLOW}cmake --build --parallel 4{Fore.RESET}
-		'''
+		help=(
+			f'Compile the project by calling '
+			f'{Fore.YELLOW}cmake --build --parallel 4{Fore.RESET}'
+		)
 	)
 	
 	parser.add_argument('-t', '--threads',
 		type=int,
 		default=DefaultValue.THREADS,
 		required=False,
-		help=f'''
-			Specify the number of threads to compile with when the '-c' flag
-			is specified. Default: {DefaultValue.THREADS}
-		'''
+		help=(
+			f'Specify the number of threads to compile with when the '
+			f'"-c" flag is specified. Default: {DefaultValue.THREADS}'
+		)
 	)
 	
 	parser.add_argument('--not_update_clangd_db',
 		action='store_false',
 		default=False,
 		required=False,
-		help=f'''
-			{Fore.YELLOW}compdb{Fore.RESET} will not be used, and no
-			{Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} will be generated.
-		'''
+		help=(
+			f'{Fore.YELLOW}compdb{Fore.RESET} will not be used, and no '
+			f'{Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} will be generated.'
+		)
 	)
 	
 	return parser
@@ -139,17 +143,16 @@ def find_required_tools(args: ap.Namespace) -> None | str:
 	If not all required tools are found, an appropriate message for the user is returned.
 	"""
 	
-	# Checking if `cmake` exists with program `command`
 	if not terminal_program_exist('cmake'):
 		return 'Could not locate `cmake`. Aborting...'
 	
-	# Checking if `compdb` exists with program `command`
+	# Checking if `compdb` exists only if we need it
 	if not args.not_update_clangd_db and not terminal_program_exist('compdb'):
-		return '''\
-			Could not locate `compdb`.
-			`compdb` is (in this case) used to update clangd-lsp
-			database for the purpose of bringing better diagnostics \
-		'''
+		return (
+			f'Could not locate {Fore.YELLOW}compdb{Fore.RESET}.\n'
+			f'{Fore.YELLOW}compdb{Fore.RESET} is used to create a compilation '
+			f'database for the purpose of providing better diagnostics'
+		)
 
 def try_construct_cmake_files(buildDirectory: str) -> None:
 	"""Create target directory for build files and export compile commands for Clangd.
@@ -184,7 +187,7 @@ def compile_cmake_project(threadCount: int) -> None:
 	"""Compile a CMake project in parallel with `threadCount` threads.
 	Throws `subprocess.CalledProcessError` on failure.
 	"""
-	sp.run(f'cmake --build ./ --parallel ${threadCount}',
+	sp.run(f'cmake --build ./ --parallel {threadCount}',
 		shell=True
 	).check_returncode()
 
