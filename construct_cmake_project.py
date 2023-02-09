@@ -70,10 +70,7 @@ compilation commands for the clangd LSP.'''
 	)
 	
 	PROGRAM_EPILOG: str = (
-f'''Usage example:
-        {Fore.YELLOW}python3 %(prog)s -c{Fore.RESET}
-
-To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the script executable.
+f'''To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the script executable.
         Add execution permission:
                 {Fore.YELLOW}chmod +x {Fore.GREEN}{SCRIPT_NAME}{Fore.RESET}
         Remove execution permission:
