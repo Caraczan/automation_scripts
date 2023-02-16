@@ -62,6 +62,13 @@ def run_cmd(args: sp._CMD) -> sp.CompletedProcess:
 	res.check_returncode()
 	return res
 
+def terminal_program_exists(programName: str) -> bool:
+	try:
+		sp.check_output(f'command -v {programName}', shell=True)
+	except sp.CalledProcessError:
+		return False
+	return True
+
 def create_option_parser() -> ap.ArgumentParser:
 	""" Process cli arguments using the argparse library
 	
@@ -134,23 +141,16 @@ f'''To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the 
 	
 	return parser
 
-def terminal_program_exist(programName: str) -> bool:
-	try:
-		sp.check_output(f'command -v {programName}', shell=True)
-	except sp.CalledProcessError:
-		return False
-	return True
-
 def find_required_tools(args: ap.Namespace) -> None | str:
 	"""Find the tools required for further processing.
 	If not all required tools are found, an appropriate message for the user is returned.
 	"""
 	
-	if not terminal_program_exist('cmake'):
+	if not terminal_program_exists('cmake'):
 		return 'Could not locate `cmake`. Aborting...'
 	
 	# Checking if `compdb` exists only if we need it
-	if not args.not_update_clangd_db and not terminal_program_exist('compdb'):
+	if not args.not_update_clangd_db and not terminal_program_exists('compdb'):
 		return (
 			f'Could not locate {Fore.YELLOW}compdb{Fore.RESET}.\n'
 			f'{Fore.YELLOW}compdb{Fore.RESET} is used to create a compilation '
