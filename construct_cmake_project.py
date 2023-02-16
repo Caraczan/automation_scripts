@@ -56,13 +56,15 @@ def main() -> int:
 	return 0
 
 def run_cmd(args: sp._CMD) -> sp.CompletedProcess:
-	""" Equivalent to `subprocess.run(args, shell=True).check_returncode()`
+	""" Equivalent to `subprocess.run(args, shell=True).check_returncode()`.
 	"""
 	res: sp.CompletedProcess = sp.run(args, shell=True)
 	res.check_returncode()
 	return res
 
 def terminal_program_exists(programName: str) -> bool:
+	""" Check if a terminal program exists.
+	"""
 	try:
 		sp.check_output(f'command -v {programName}', shell=True)
 	except sp.CalledProcessError:
@@ -70,9 +72,8 @@ def terminal_program_exists(programName: str) -> bool:
 	return True
 
 def create_option_parser() -> ap.ArgumentParser:
-	""" Process cli arguments using the argparse library
-	
-	Adding options to `argparse` and returning an `ArgumentParser`
+	""" Process cli arguments using the argparse library.
+	Adding options to `argparse` and returning an `ArgumentParser`.
 	"""
 	SCRIPT_NAME: str = sys.argv[0]
 	
