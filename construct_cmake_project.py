@@ -55,6 +55,12 @@ def main() -> int:
 	print(f'>>> {Fore.GREEN}{os.getcwd()}{Fore.RESET}')
 	return 0
 
+def run_cmd(args: sp._CMD) -> sp.CompletedProcess:
+	""" Equivalent to `subprocess.run(args, shell=True).check_returncode()`
+	"""
+	res: sp.CompletedProcess = sp.run(args, shell=True)
+	res.check_returncode()
+	return res
 
 def create_option_parser() -> ap.ArgumentParser:
 	""" Process cli arguments using the argparse library
@@ -157,36 +163,26 @@ def try_construct_cmake_files(buildDirectory: str) -> None:
 	"""
 	
 	# Create a build directory and enter it
-	sp.run(f'mkdir -p {buildDirectory}', shell=True).check_returncode()
+	run_cmd(f'mkdir -p {buildDirectory}')
 	os.chdir(buildDirectory)
 	
 	# Generating project using a CMakeLists.txt file
-	sp.run('cmake ../CMakeLists.txt -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./',
-		shell=True
-	).check_returncode()
+	run_cmd('cmake ../CMakeLists.txt -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./')
 
 def compile_database() -> None:
 	"""Use compdb to upgrade the `COMPILATION_DATABASE` file created by CMake.
 	"""
 	with tempfile.TemporaryDirectory() as tmp_dir:
-		sp.run(f'mv ./{COMPILATION_DATABASE} {tmp_dir}/{COMPILATION_DATABASE}',
-			shell=True
-		).check_returncode()
-		
-		sp.run(f'compdb -p {tmp_dir} list > "{COMPILATION_DATABASE}"',
-			shell=True
-		).check_returncode()
-		
-		sp.run(f'ls {tmp_dir}', shell=True).check_returncode()
-		sp.run(f'rm -r {tmp_dir}', shell=True).check_returncode()
+		run_cmd(f'mv ./{COMPILATION_DATABASE} {tmp_dir}/{COMPILATION_DATABASE}')
+		run_cmd(f'compdb -p {tmp_dir} list > "{COMPILATION_DATABASE}"')
+		run_cmd(f'ls {tmp_dir}')
+		run_cmd(f'rm -r {tmp_dir}')
 
 def compile_cmake_project(threadCount: int) -> None:
 	"""Compile a CMake project in parallel with `threadCount` threads.
 	Throws `subprocess.CalledProcessError` on failure.
 	"""
-	sp.run(f'cmake --build ./ --parallel {threadCount}',
-		shell=True
-	).check_returncode()
+	run_cmd(f'cmake --build ./ --parallel {threadCount}')
 
 
 if __name__ == "__main__":
