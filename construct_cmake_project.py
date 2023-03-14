@@ -32,7 +32,7 @@ def main() -> int:
 		return 1
 	
 	try:
-		try_construct_cmake_files(args.build)
+		try_construct_cmake_files(args.build, args.build_type)
 	except sp.CalledProcessError:
 		return 1
 	
@@ -55,24 +55,24 @@ def main() -> int:
 
 def create_option_parser() -> ap.ArgumentParser:
 	""" Process cli arguments using the argparse library
-	
+
 	Adding options to `argparse` and returning an `ArgumentParser`
 	"""
 	SCRIPT_NAME: str = sys.argv[0]
-	
+
 	PROGRAM_DESCRIPTION: str = '''
 		Python script to simplify CMake usage for C++ project construction.
 		The script stores the CMake files into a build directory and exports
 		compile commands for the clangd LSP.
 	'''
-	
+
 	PROGRAM_EPILOG: str = f'''
 		Example usage: `python3 {SCRIPT_NAME} -c`.
 		The command will run CMake, compile the codebase and generate a database
 		('compile_commands.json' file) for the clangd LSP.
 		The created build files are made relative to where you run the script from.
 	'''
-	
+
 	parser: ap.ArgumentParser = ap.ArgumentParser(
 		prog=SCRIPT_NAME,
 		description=PROGRAM_DESCRIPTION,
@@ -80,22 +80,22 @@ def create_option_parser() -> ap.ArgumentParser:
 		add_help=True,
 		formatter_class=lambda prog: ap.HelpFormatter(prog, 8, 16)
 	)
-	
+
 	#parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0.0')
-	
+
 	parser.add_argument('-b', '--build',
 		type=str,
 		default=DefaultValue.BUILD,
 		required=False,
 		help=f'Choose a different build directory. Default: \'{DefaultValue.BUILD}\'',
 	)
-	
+
 	parser.add_argument('-c', '--compile',
 		required=False,
 		action='store_true',
 		help='Compile the project by calling CMake --build --parallel 4'
 	)
-	
+
 	parser.add_argument('-t', '--threads',
 		type=int,
 		default=DefaultValue.THREADS,
@@ -105,14 +105,22 @@ def create_option_parser() -> ap.ArgumentParser:
 			is specified. Default: {DefaultValue.THREADS}
 		'''
 	)
-	
+
 	parser.add_argument('--not_update_clangd_db',
 		action='store_false',
 		default=False,
 		required=False,
 		help='Disable use of `compdb` to upgrade the clangd database. Default: False'
 	)
-	
+
+	parser.add_argument('--build_type',
+		action='store',
+		default='debug',
+		required=False,
+		choices=['debug', 'release'],
+		help='Compile project with <debug|release> flag, Default: debug'
+	)
+
 	return parser
 
 def terminal_program_exist(programName: str) -> bool:
@@ -126,11 +134,11 @@ def find_required_tools(args: ap.Namespace) -> None | str:
 	"""Find the tools required for further processing.
 	If not all required tools are found, an appropriate message for the user is returned.
 	"""
-	
+
 	# Checking if `cmake` exists with program `command`
 	if not terminal_program_exist('cmake'):
 		return 'Could not locate `cmake`. Aborting...'
-	
+
 	# Checking if `compdb` exists with program `command`
 	if not args.not_update_clangd_db and not terminal_program_exist('compdb'):
 		return '''\
@@ -139,19 +147,19 @@ def find_required_tools(args: ap.Namespace) -> None | str:
 			database for the purpose of bringing better diagnostics \
 		'''
 
-def try_construct_cmake_files(buildDirectory: str) -> None:
+def try_construct_cmake_files(buildDirectory: str, buildType: str) -> None:
 	"""Create target directory for build files and export compile commands for Clangd.
 	Throws `subprocess.CalledProcessError` or `OSError` on failure.
 	"""
-	
+
 	# Create a build directory and enter it
 	sp.run(f'mkdir -p {buildDirectory}', shell=True).check_returncode()
 	os.chdir(buildDirectory)
-	
+
 	# Generating project using a CMakeLists.txt file
-	sp.run('cmake ../CMakeLists.txt -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./',
-		shell=True
-	).check_returncode()
+	sp.run(f'cmake ../CMakeLists.txt -DCMAKE_BUILD_TYPE={buildType.capitalize()} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./',
+			   shell=True
+		   ).check_returncode()
 
 def compile_database() -> None:
 	"""Use `compdb` to upgrade the `compile_commands.json` file created by CMake.
