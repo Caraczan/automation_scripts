@@ -55,7 +55,7 @@ def main() -> int:
 	print(f'>>> {Fore.GREEN}{os.getcwd()}{Fore.RESET}')
 	return 0
 
-def run_cmd(args: sp._CMD) -> sp.CompletedProcess:
+def run_cmd(args: sp) -> sp.CompletedProcess:
 	""" Equivalent to `subprocess.run(args, shell=True).check_returncode()`.
 	"""
 	res: sp.CompletedProcess = sp.run(args, shell=True)
