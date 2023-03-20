@@ -21,7 +21,7 @@ class DefaultValue:
 	BUILD: str = './build'
 
 COMPILATION_DATABASE: str = 'compile_commands.json'
-SCRIPT_VERSION: str = '1.1.3'
+SCRIPT_VERSION: str = '1.1.4'
 
 
 def main() -> int:
@@ -35,7 +35,7 @@ def main() -> int:
 		return 1
 	
 	try:
-		try_construct_cmake_files(args.build)
+		try_construct_cmake_files(args.build, args.build_type)
 	except sp.CalledProcessError:
 		return 1
 	
@@ -78,13 +78,13 @@ def create_option_parser() -> ap.ArgumentParser:
 	SCRIPT_NAME: str = sys.argv[0]
 	
 	PROGRAM_DESCRIPTION: str = (
-f'''Python script to simplify {Fore.YELLOW}CMake{Fore.RESET} usage for C/C++ project construction.
-The script stores the {Fore.YELLOW}CMake{Fore.RESET} files into a build directory and exports \
-compilation commands for the clangd LSP.'''
-	)
+	f'''Python script to simplify {Fore.YELLOW}CMake{Fore.RESET} usage for C/C++ project construction.
+	The script stores the {Fore.YELLOW}CMake{Fore.RESET} files into a build directory and exports \
+	compilation commands for the clangd LSP.'''
+		)
 	
 	PROGRAM_EPILOG: str = (
-f'''To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the script executable.
+	f'''To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the script executable.
         Add execution permission:
                 {Fore.YELLOW}chmod +x {Fore.GREEN}{SCRIPT_NAME}{Fore.RESET}
         Remove execution permission:
@@ -139,6 +139,14 @@ f'''To avoid using {Fore.YELLOW}python3{Fore.RESET} before every call, make the 
 			f'{Fore.GREEN}{COMPILATION_DATABASE}{Fore.RESET} will be generated.'
 		)
 	)
+
+	parser.add_argument('--build_type',
+		action='store',
+		default='debug',
+		required=False,
+		choices=['debug', 'release'],
+		help='Compile project with <debug|release> flag, Default: debug.\nIt will pass `-DCMAKE_BUILD_TYPE=<debug|releas>` in cmake command.'
+	)
 	
 	return parser
 
@@ -158,7 +166,7 @@ def find_required_tools(args: ap.Namespace) -> None | str:
 			f'database for the purpose of providing better diagnostics'
 		)
 
-def try_construct_cmake_files(buildDirectory: str) -> None:
+def try_construct_cmake_files(buildDirectory: str, buildType: str) -> None:
 	"""Create target directory for build files and export compile commands for Clangd.
 	Throws `subprocess.CalledProcessError` or `OSError` on failure.
 	"""
@@ -168,7 +176,7 @@ def try_construct_cmake_files(buildDirectory: str) -> None:
 	os.chdir(buildDirectory)
 	
 	# Generating project using a CMakeLists.txt file
-	run_cmd('cmake ../CMakeLists.txt -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./')
+	run_cmd(f'cmake ../CMakeLists.txt -DCMAKE_BUILD_TYPE={buildType.capitalize()} -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -B./')
 
 def compile_database() -> None:
 	"""Use compdb to upgrade the `COMPILATION_DATABASE` file created by CMake.
