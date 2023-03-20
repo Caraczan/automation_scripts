@@ -145,7 +145,7 @@ def create_option_parser() -> ap.ArgumentParser:
 		default='debug',
 		required=False,
 		choices=['debug', 'release'],
-		help='Compile project with <debug|release> flag, Default: debug.\nIt will pass `-DCMAKE_BUILD_TYPE=<debug|releas>` in cmake command.'
+		help=f'Passes {Fore.YELLOW}release{Fore.RESET} or {Fore.YELLOW}debug{Fore.RESET} flag to {Fore.GREEN}CMakeLists.txt{Fore.RESET}, with {Fore.YELLOW}\'-DCMAKE_BUILD_TYPE=\'{Fore.RESET}.\nDefault: {Fore.YELLOW}debug{Fore.RESET}.'
 	)
 	
 	return parser
